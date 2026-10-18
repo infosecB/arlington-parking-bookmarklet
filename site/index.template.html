@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parking Waiver Helper</title>
+<meta name="description" content="A one-tap button that fills in Arlington's overnight parking waiver form for you.">
+<style>
+  :root {
+    --bg: #f6f4ef; --card: #ffffff; --ink: #1f2328; --muted: #5b6470;
+    --line: #dcd8cf; --accent: #1f5f8b; --accent-ink: #ffffff; --soft: #e8f0f6;
+    --warn: #8a5a00; --warn-bg: #fff4dc; --ok: #1d6b3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #a2abb6;
+      --line: #343a42; --accent: #6cb4ec; --accent-ink: #0d1b26; --soft: #1d2b37;
+      --warn: #f2c46b; --warn-bg: #2e2614; --ok: #6fd296;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #a2abb6;
+    --line: #343a42; --accent: #6cb4ec; --accent-ink: #0d1b26; --soft: #1d2b37;
+    --warn: #f2c46b; --warn-bg: #2e2614; --ok: #6fd296;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 28px 16px 64px; }
+  h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); margin: 0 0 24px; }
+  section {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px; margin: 0 0 18px;
+  }
+  h2 { font-size: 1.15rem; margin: 0 0 4px; display: flex; gap: 10px; align-items: center; }
+  .step {
+    flex: none; width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center;
+    background: var(--accent); color: var(--accent-ink); font-size: .95rem; font-weight: 700;
+  }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: .95rem; }
+  label { display: block; font-weight: 600; font-size: .95rem; margin: 14px 0 4px; }
+  label .opt { font-weight: 400; color: var(--muted); }
+  input, select {
+    width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hint { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
+  button, .btn {
+    font: inherit; font-weight: 600; border: 0; border-radius: 10px; cursor: pointer;
+    padding: 12px 18px; background: var(--accent); color: var(--accent-ink); text-decoration: none;
+    display: inline-block;
+  }
+  button.secondary { background: var(--soft); color: var(--ink); }
+  .actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .saved { color: var(--ok); font-size: .9rem; }
+  .locked { opacity: .45; pointer-events: none; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+  .tabs button { background: var(--soft); color: var(--ink); padding: 8px 14px; font-size: .95rem; }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+  ol { padding-left: 1.3em; margin: 0; }
+  ol li { margin: 0 0 10px; }
+  .bm {
+    display: inline-block; padding: 12px 20px; border-radius: 10px; border: 2px dashed var(--accent);
+    background: var(--soft); color: var(--ink); font-weight: 700; text-decoration: none; cursor: grab;
+  }
+  .note {
+    background: var(--warn-bg); color: var(--ink); border-left: 4px solid var(--warn);
+    padding: 10px 12px; border-radius: 8px; font-size: .92rem; margin-top: 14px;
+  }
+  code { font-size: .9em; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+  footer { color: var(--muted); font-size: .85rem; margin-top: 28px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Overnight parking waiver, in one tap</h1>
+  <p class="lede">
+    Arlington bans overnight street parking (1&ndash;7 a.m.) unless you request a waiver for the night.
+    This sets up a button in your browser that fills in the town's waiver form with your details.
+    You still check it over and press Submit yourself.
+  </p>
+
+  <section id="s1">
+    <h2><span class="step">1</span> Your details</h2>
+    <p class="sub">These are stored only in this browser and inside your button. Nothing is sent anywhere.</p>
+    <form id="f" autocomplete="on">
+      <label for="email">Email</label>
+      <input id="email" type="email" required autocomplete="email" placeholder="you@example.com">
+
+      <label for="address">Street address</label>
+      <input id="address" required autocomplete="address-line1" placeholder="12 Pleasant St">
+      <div class="hint">Number and street only. Abbreviations like St, Ave, Rd work best.</div>
+
+      <label for="unit">Unit / apartment <span class="opt">(optional)</span></label>
+      <input id="unit" autocomplete="address-line2">
+
+      <div class="row">
+        <div>
+          <label for="plate">License plate</label>
+          <input id="plate" required autocapitalize="characters" placeholder="1ABC23">
+        </div>
+        <div>
+          <label for="plateState">Plate state</label>
+          <select id="plateState"></select>
+        </div>
+      </div>
+
+      <label for="phone">Phone</label>
+      <input id="phone" type="tel" required autocomplete="tel" placeholder="(781) 555-1212">
+
+      <label for="reason">Usual reason</label>
+      <select id="reason">
+        <option value="Guest Visiting">Guest visiting</option>
+        <option value="Disabled Motor Vehichle">Disabled motor vehicle</option>
+        <option value="Driveway Maintenance">Driveway maintenance</option>
+      </select>
+
+      <div class="actions">
+        <button type="submit">Make my button</button>
+        <span class="saved" id="saved" hidden>&#10003; Saved. Your button is ready below.</span>
+      </div>
+    </form>
+  </section>
+
+  <section id="s2" class="locked">
+    <h2><span class="step">2</span> Add the button to your browser</h2>
+    <p class="sub">You only do this once. If your details change, come back and make a new one.</p>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="desktop">Computer</button>
+      <button type="button" role="tab" data-tab="ios">iPhone / iPad</button>
+      <button type="button" role="tab" data-tab="android">Android</button>
+    </div>
+
+    <div data-panel="desktop">
+      <ol>
+        <li>Show your bookmarks bar if it's hidden: <code>Ctrl+Shift+B</code> on Windows, <code>&#8984;+Shift+B</code> on a Mac.</li>
+        <li>Drag this button up onto the bookmarks bar:<br><br>
+          <a class="bm" id="bm" href="#" draggable="true">&#128663; Fill parking form</a></li>
+      </ol>
+    </div>
+
+    <div data-panel="ios" hidden>
+      <ol>
+        <li><button type="button" class="copy">Copy button code</button> <span class="saved copied" hidden>Copied</span></li>
+        <li>In Safari, tap the <b>Share</b> icon, then <b>Add Bookmark</b>. Name it <i>Fill parking form</i> and tap <b>Save</b>.</li>
+        <li>Open your bookmarks (the book icon), tap <b>Edit</b>, then tap the bookmark you just made.</li>
+        <li>Clear the address line underneath the name, paste the code, and tap <b>Done</b>.</li>
+      </ol>
+    </div>
+
+    <div data-panel="android" hidden>
+      <ol>
+        <li><button type="button" class="copy">Copy button code</button> <span class="saved copied" hidden>Copied</span></li>
+        <li>In Chrome, tap <b>&#8942;</b>, then the <b>&#9734;</b> star to bookmark this page.</li>
+        <li>Tap <b>Edit</b> on the bar that pops up. Rename it to <i>Fill parking form</i>, replace the URL with the code you copied, and save.</li>
+        <li>To use it, type <i>Fill parking</i> in the address bar and tap the bookmark that shows up. Tapping it from the bookmarks list doesn't work on Android.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="s3" class="locked">
+    <h2><span class="step">3</span> Each night you need a waiver</h2>
+    <ol>
+      <li>Open the town's form: <a href="__FORM_URL__" target="_blank" rel="noopener">Overnight Parking Request</a>.</li>
+      <li>Tap your <b>Fill parking form</b> button.</li>
+      <li>Check the details, then press <b>Submit</b> on the town's page.</li>
+    </ol>
+    <div class="note">
+      <b>About the date:</b> the town wants the date of the morning the waiver covers (1&ndash;7 a.m.).
+      A waiver for Saturday night uses Sunday's date. The button handles this, and you can
+      switch to tomorrow night from the bar it shows at the top of the form.
+    </div>
+  </section>
+
+  <footer>
+    Made by a neighbor. This isn't a Town of Arlington service. If the town changes its form, the button may stop working
+    until it's updated. You can always fill in the form by hand.
+  </footer>
+</main>
+
+<script>
+(function () {
+  var FILL_SRC = __FILL_SRC__;
+  var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DC (District of Columbia)","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","CANADA","MEXICO"];
+  var FIELDS = ["email", "address", "unit", "plate", "plateState", "phone", "reason"];
+  var KEY = "apw-details-v1";
+
+  var sel = document.getElementById("plateState");
+  STATES.forEach(function (s) {
+    var o = document.createElement("option");
+    o.value = s;
+    o.textContent = s.indexOf("DC") === 0 ? "DC" : s.length === 2 ? s : s.charAt(0) + s.slice(1).toLowerCase();
+    sel.appendChild(o);
+  });
+  sel.value = "MA";
+
+  function read() {
+    var cfg = {};
+    FIELDS.forEach(function (k) { cfg[k] = document.getElementById(k).value.trim(); });
+    cfg.plate = cfg.plate.toUpperCase().replace(/\s+/g, "");
+    return cfg;
+  }
+  function bookmarklet(cfg) {
+    return "javascript:" + encodeURIComponent(FILL_SRC.replace("__CFG__", JSON.stringify(cfg)));
+  }
+  var code = "";
+  function unlock(cfg) {
+    code = bookmarklet(cfg);
+    document.getElementById("bm").href = code;
+    document.getElementById("s2").classList.remove("locked");
+    document.getElementById("s3").classList.remove("locked");
+  }
+
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (saved) {
+      FIELDS.forEach(function (k) { if (saved[k] != null) document.getElementById(k).value = saved[k]; });
+      unlock(read());
+    }
+  } catch (e) {}
+
+  document.getElementById("f").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var cfg = read();
+    try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (err) {}
+    unlock(cfg);
+    document.getElementById("saved").hidden = false;
+    document.getElementById("s2").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.getElementById("bm").addEventListener("click", function (e) {
+    e.preventDefault();
+    alert("Drag this button to your bookmarks bar instead of clicking it. Then use it on the town's form.");
+  });
+
+  // Tabs: pick a sensible default for the device.
+  var ua = navigator.userAgent;
+  var guess = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "ios"
+            : /Android/.test(ua) ? "android" : "desktop";
+  function show(tab) {
+    document.querySelectorAll("[data-tab]").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === tab); });
+    document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== tab; });
+  }
+  document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { show(b.dataset.tab); }; });
+  show(guess);
+
+  document.querySelectorAll(".copy").forEach(function (b) {
+    b.onclick = function () {
+      var done = function () { var c = b.parentNode.querySelector(".copied"); c.hidden = false; setTimeout(function () { c.hidden = true; }, 2500); };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(code).then(done, function () { fallback(); done(); });
+      } else { fallback(); done(); }
+    };
+  });
+  function fallback() {
+    var t = document.createElement("textarea");
+    t.value = code; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select(); t.setSelectionRange(0, code.length);
+    try { document.execCommand("copy"); } catch (e) {}
+    t.remove();
+  }
+})();
+</script>
+</body>
+</html>
